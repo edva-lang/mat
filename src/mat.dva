@@ -1,0 +1,70 @@
+// mat/src/mat.dva — Public library API for 2D/3D graphics mathematics
+// Provides packed records and hybrid (pure value + zero-copy buffer) linear algebra.
+
+#use "vec2"
+#use "vec3"
+#use "vec4"
+#use "mat3"
+#use "mat4"
+#use "quat"
+
+#public
+   // --- Core Record Types ---
+   #type Vec2 vec2::Vec2
+   #type Vec3 vec3::Vec3
+   #type Vec4 vec4::Vec4
+   #type Mat3 mat3::Mat3
+   #type Mat4 mat4::Mat4
+   #type Quat quat::Quat
+
+   // --- Vector Constructors ---
+   vec2: Float, Float => vec2::Vec2
+   vec2 = x, y => vec2::vec2(x, y)
+
+   vec3: Float, Float, Float => vec3::Vec3
+   vec3 = x, y, z => vec3::vec3(x, y, z)
+
+   vec4: Float, Float, Float, Float => vec4::Vec4
+   vec4 = x, y, z, w => vec4::vec4(x, y, z, w)
+
+   quat: Float, Float, Float, Float => quat::Quat
+   quat = x, y, z, w => quat::quat(x, y, z, w)
+
+   // --- Matrix Constructors & Value Operations ---
+   mat3_identity: () => mat3::Mat3
+   mat3_identity = !=> mat3::identity!
+
+   mat3_mul: mat3::Mat3, mat3::Mat3 => mat3::Mat3
+   mat3_mul = a, b => mat3::mul(a, b)
+
+   mat4_identity: () => mat4::Mat4
+   mat4_identity = !=> mat4::identity!
+
+   mat4_mul: mat4::Mat4, mat4::Mat4 => mat4::Mat4
+   mat4_mul = a, b => mat4::mul(a, b)
+
+   mat4_translate: Float, Float, Float => mat4::Mat4
+   mat4_translate = x, y, z => mat4::translate(x, y, z)
+
+   mat4_rotate_x: Float => mat4::Mat4
+   mat4_rotate_x = a => mat4::rotate_x(a)
+
+   mat4_rotate_y: Float => mat4::Mat4
+   mat4_rotate_y = a => mat4::rotate_y(a)
+
+   mat4_rotate_z: Float => mat4::Mat4
+   mat4_rotate_z = a => mat4::rotate_z(a)
+
+   mat4_scale: Float, Float, Float => mat4::Mat4
+   mat4_scale = x, y, z => mat4::scale(x, y, z)
+
+   quat_identity: () => quat::Quat
+   quat_identity = !=> quat::identity!
+
+   // --- Sizes for Buffer Allocation ---
+   VEC2_SIZE = 8
+   VEC3_SIZE = 12
+   VEC4_SIZE = 16
+   MAT3_SIZE = 36
+   MAT4_SIZE = 64
+   QUAT_SIZE = 16

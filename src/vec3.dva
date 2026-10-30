@@ -1,0 +1,155 @@
+// mat/src/vec3.dva — 3D vector primitives and operations
+// Supports both pure value records and in-place memory buffer procedures.
+
+#public
+   #type Vec3 #packed (
+      x: f32,
+      y: f32,
+      z: f32
+   )
+
+   // --- Constructors & Constants ---
+
+   vec3: Float, Float, Float => Vec3
+   vec3 = x, y, z => Vec3((f32(x), f32(y), f32(z)))
+
+   zero: () => Vec3
+   zero = !=> Vec3((0.0f32, 0.0f32, 0.0f32))
+
+   up: () => Vec3
+   up = !=> Vec3((0.0f32, 1.0f32, 0.0f32))
+
+   right: () => Vec3
+   right = !=> Vec3((1.0f32, 0.0f32, 0.0f32))
+
+   forward: () => Vec3
+   forward = !=> Vec3((0.0f32, 0.0f32, -1.0f32))
+
+   // --- Pure Value Operations ---
+
+   add: Vec3, Vec3 => Vec3
+   add = a, b => Vec3((a.x + b.x, a.y + b.y, a.z + b.z))
+
+   sub: Vec3, Vec3 => Vec3
+   sub = a, b => Vec3((a.x - b.x, a.y - b.y, a.z - b.z))
+
+   mul: Vec3, Vec3 => Vec3
+   mul = a, b => Vec3((a.x * b.x, a.y * b.y, a.z * b.z))
+
+   scale: Vec3, Float => Vec3
+   scale = v, s =>
+      sf = f32(s)
+      Vec3((v.x * sf, v.y * sf, v.z * sf))
+
+   dot: Vec3, Vec3 => Float
+   dot = a, b => Float(a.x * b.x + a.y * b.y + a.z * b.z)
+
+   cross: Vec3, Vec3 => Vec3
+   cross = a, b => Vec3((
+      a.y * b.z - a.z * b.y,
+      a.z * b.x - a.x * b.z,
+      a.x * b.y - a.y * b.x
+   ))
+
+   len_sq: Vec3 => Float
+   len_sq = v => Float(v.x * v.x + v.y * v.y + v.z * v.z)
+
+   len: Vec3 => Float
+   len = v => %sqrt(Float(v.x * v.x + v.y * v.y + v.z * v.z))
+
+   normalize: Vec3 => Vec3
+   normalize = v =>
+      l = len(v)
+      l == 0.0 | zero! | scale(v, 1.0 / l)
+
+   distance: Vec3, Vec3 => Float
+   distance = a, b => len(sub(a, b))
+
+   lerp: Vec3, Vec3, Float => Vec3
+   lerp = a, b, t =>
+      tf = f32(t)
+      inv_tf = 1.0f32 - tf
+      Vec3((
+         a.x * inv_tf + b.x * tf,
+         a.y * inv_tf + b.y * tf,
+         a.z * inv_tf + b.z * tf
+      ))
+
+   negate: Vec3 => Vec3
+   negate = v => Vec3((0.0f32 - v.x, 0.0f32 - v.y, 0.0f32 - v.z))
+
+   // --- In-Place Buffer Procedures ---
+
+   set_to: Addr, Float, Float, Float => ()
+   set_to = ptr, x, y, z =>
+      v = @[ptr Vec3]
+      v.x = f32(x)
+      v.y = f32(y)
+      v.z = f32(z)
+      0
+
+   copy_to: Addr, Addr => ()
+   copy_to = dst_ptr, src_ptr =>
+      src = @[src_ptr Vec3]
+      dst = @[dst_ptr Vec3]
+      dst.x = src.x
+      dst.y = src.y
+      dst.z = src.z
+      0
+
+   add_to: Addr, Addr, Addr => ()
+   add_to = out_ptr, a_ptr, b_ptr =>
+      a = @[a_ptr Vec3]
+      b = @[b_ptr Vec3]
+      out = @[out_ptr Vec3]
+      out.x = a.x + b.x
+      out.y = a.y + b.y
+      out.z = a.z + b.z
+      0
+
+   sub_to: Addr, Addr, Addr => ()
+   sub_to = out_ptr, a_ptr, b_ptr =>
+      a = @[a_ptr Vec3]
+      b = @[b_ptr Vec3]
+      out = @[out_ptr Vec3]
+      out.x = a.x - b.x
+      out.y = a.y - b.y
+      out.z = a.z - b.z
+      0
+
+   cross_to: Addr, Addr, Addr => ()
+   cross_to = out_ptr, a_ptr, b_ptr =>
+      a = @[a_ptr Vec3]
+      b = @[b_ptr Vec3]
+      out = @[out_ptr Vec3]
+      out.x = a.y * b.z - a.z * b.y
+      out.y = a.z * b.x - a.x * b.z
+      out.z = a.x * b.y - a.y * b.x
+      0
+
+   scale_to: Addr, Addr, Float => ()
+   scale_to = out_ptr, src_ptr, s =>
+      src = @[src_ptr Vec3]
+      out = @[out_ptr Vec3]
+      sf = f32(s)
+      out.x = src.x * sf
+      out.y = src.y * sf
+      out.z = src.z * sf
+      0
+
+   normalize_to: Addr, Addr => ()
+   normalize_to = out_ptr, src_ptr =>
+      src = @[src_ptr Vec3]
+      out = @[out_ptr Vec3]
+      l = %sqrt(Float(src.x * src.x + src.y * src.y + src.z * src.z))
+      l == 0.0
+         |
+            out.x = 0.0f32
+            out.y = 0.0f32
+            out.z = 0.0f32
+         |
+            inv_l = f32(1.0 / l)
+            out.x = src.x * inv_l
+            out.y = src.y * inv_l
+            out.z = src.z * inv_l
+      0

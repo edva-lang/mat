@@ -1,0 +1,60 @@
+// mat/tests/test_mat.dva — Matrix tests
+#use io
+#use sys
+#use "math/geom"
+#use "../src/mat3"
+#use "../src/mat4"
+
+assert: <>, String => ()
+assert = ok, msg =>
+   ok | --|
+   io::out("FAIL: " + msg)
+   sys::exit(1)
+
+test_mat3: () => ()
+test_mat3 = !=>
+   m = mat3::identity!
+   assert(Float(m.m(0)) == 1.0 && Float(m.m(4)) == 1.0 && Float(m.m(8)) == 1.0, "mat3 identity")
+
+   buf_a = {36}
+   buf_out = {36}
+   mat3::identity_to(&buf_a)
+   det = mat3::determinant(&buf_a)
+   assert(det == 1.0, "mat3 determinant")
+
+   ok = mat3::invert_to(&buf_out, &buf_a)
+   assert(ok, "mat3 invert")
+   inv = @[&buf_out mat3::Mat3]
+   assert(Float(inv.m(0)) == 1.0 && Float(inv.m(4)) == 1.0, "mat3 inv identity")
+
+test_mat4: () => ()
+test_mat4 = !=>
+   buf_a = {64}
+   buf_b = {64}
+   buf_c = {64}
+   mat4::identity_to(&buf_a)
+   mat4::translate_to(&buf_b, 10.0, 20.0, 30.0)
+
+   // Identity * Translation = Translation
+   mat4::mul_to(&buf_c, &buf_a, &buf_b)
+   res = @[&buf_c mat4::Mat4]
+   assert(Float(res.m(12)) == 10.0 && Float(res.m(13)) == 20.0 && Float(res.m(14)) == 30.0, "mat4 mul translation")
+
+   // Perspective
+   buf_p = {64}
+   mat4::perspective_to(&buf_p, 1.047197, 1.6, 0.1, 100.0)
+   p = @[&buf_p mat4::Mat4]
+   assert(Float(p.m(11)) == -1.0, "mat4 perspective")
+
+   // Pure value Mat4 operations
+   v_id  = mat4::identity!
+   v_tr  = mat4::translate(10.0, 20.0, 30.0)
+   v_res = mat4::mul(v_id, v_tr)
+   assert(Float(v_res.m(12)) == 10.0 && Float(v_res.m(13)) == 20.0 && Float(v_res.m(14)) == 30.0, "mat4 value mul translation")
+
+   v_look = mat4::look_at(geom::vec3(0.0, 0.0, 5.0), geom::vec3(0.0, 0.0, 0.0), geom::vec3(0.0, 1.0, 0.0))
+   assert(Float(v_look.m(14)) == -5.0, "mat4 value look_at")
+
+test_mat3!
+test_mat4!
+io::out("PASS: Matrix tests")

@@ -1,0 +1,117 @@
+// mat/src/vec2.dva — 2D vector primitives and operations
+// Supports both pure value records and in-place memory buffer procedures.
+
+#public
+   #type Vec2 #packed (
+      x: f32,
+      y: f32
+   )
+
+   // --- Constructors & Constants ---
+
+   vec2: Float, Float => Vec2
+   vec2 = x, y => Vec2((f32(x), f32(y)))
+
+   zero: () => Vec2
+   zero = !=> Vec2((0.0f32, 0.0f32))
+
+   // --- Pure Value Operations ---
+
+   add: Vec2, Vec2 => Vec2
+   add = a, b => Vec2((a.x + b.x, a.y + b.y))
+
+   sub: Vec2, Vec2 => Vec2
+   sub = a, b => Vec2((a.x - b.x, a.y - b.y))
+
+   mul: Vec2, Vec2 => Vec2
+   mul = a, b => Vec2((a.x * b.x, a.y * b.y))
+
+   scale: Vec2, Float => Vec2
+   scale = v, s =>
+      sf = f32(s)
+      Vec2((v.x * sf, v.y * sf))
+
+   dot: Vec2, Vec2 => Float
+   dot = a, b => Float(a.x * b.x + a.y * b.y)
+
+   len_sq: Vec2 => Float
+   len_sq = v => Float(v.x * v.x + v.y * v.y)
+
+   len: Vec2 => Float
+   len = v => %sqrt(Float(v.x * v.x + v.y * v.y))
+
+   normalize: Vec2 => Vec2
+   normalize = v =>
+      l = len(v)
+      l == 0.0 | zero! | scale(v, 1.0 / l)
+
+   distance: Vec2, Vec2 => Float
+   distance = a, b => len(sub(a, b))
+
+   lerp: Vec2, Vec2, Float => Vec2
+   lerp = a, b, t =>
+      tf = f32(t)
+      inv_tf = 1.0f32 - tf
+      Vec2((a.x * inv_tf + b.x * tf, a.y * inv_tf + b.y * tf))
+
+   negate: Vec2 => Vec2
+   negate = v => Vec2((0.0f32 - v.x, 0.0f32 - v.y))
+
+   // --- In-Place Buffer Procedures ---
+
+   set_to: Addr, Float, Float => ()
+   set_to = ptr, x, y =>
+      v = @[ptr Vec2]
+      v.x = f32(x)
+      v.y = f32(y)
+      0
+
+   copy_to: Addr, Addr => ()
+   copy_to = dst_ptr, src_ptr =>
+      src = @[src_ptr Vec2]
+      dst = @[dst_ptr Vec2]
+      dst.x = src.x
+      dst.y = src.y
+      0
+
+   add_to: Addr, Addr, Addr => ()
+   add_to = out_ptr, a_ptr, b_ptr =>
+      a = @[a_ptr Vec2]
+      b = @[b_ptr Vec2]
+      out = @[out_ptr Vec2]
+      out.x = a.x + b.x
+      out.y = a.y + b.y
+      0
+
+   sub_to: Addr, Addr, Addr => ()
+   sub_to = out_ptr, a_ptr, b_ptr =>
+      a = @[a_ptr Vec2]
+      b = @[b_ptr Vec2]
+      out = @[out_ptr Vec2]
+      out.x = a.x - b.x
+      out.y = a.y - b.y
+      0
+
+   scale_to: Addr, Addr, Float => ()
+   scale_to = out_ptr, src_ptr, s =>
+      src = @[src_ptr Vec2]
+      out = @[out_ptr Vec2]
+      sf = f32(s)
+      out.x = src.x * sf
+      out.y = src.y * sf
+      0
+
+   normalize_to: Addr, Addr => ()
+   normalize_to = out_ptr, src_ptr =>
+      src = @[src_ptr Vec2]
+      out = @[out_ptr Vec2]
+      l = %sqrt(Float(src.x * src.x + src.y * src.y))
+      l == 0.0
+         |
+            out.x = 0.0f32
+            out.y = 0.0f32
+         |
+            inv_l = f32(1.0 / l)
+            out.x = src.x * inv_l
+            out.y = src.y * inv_l
+      0

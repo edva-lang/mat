@@ -1,0 +1,107 @@
+// mat/src/vec4.dva — 4D vector primitives and operations
+// Supports both pure value records and in-place memory buffer procedures.
+
+#use "vec3"
+
+#public
+   #type Vec4 #packed (
+      x: f32,
+      y: f32,
+      z: f32,
+      w: f32
+   )
+
+   // --- Constructors & Constants ---
+
+   vec4: Float, Float, Float, Float => Vec4
+   vec4 = x, y, z, w => Vec4((f32(x), f32(y), f32(z), f32(w)))
+
+   from_vec3: vec3::Vec3, Float => Vec4
+   from_vec3 = v, w => Vec4((v.x, v.y, v.z, f32(w)))
+
+   zero: () => Vec4
+   zero = !=> Vec4((0.0f32, 0.0f32, 0.0f32, 0.0f32))
+
+   // --- Pure Value Operations ---
+
+   add: Vec4, Vec4 => Vec4
+   add = a, b => Vec4((a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w))
+
+   sub: Vec4, Vec4 => Vec4
+   sub = a, b => Vec4((a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w))
+
+   scale: Vec4, Float => Vec4
+   scale = v, s =>
+      sf = f32(s)
+      Vec4((v.x * sf, v.y * sf, v.z * sf, v.w * sf))
+
+   dot: Vec4, Vec4 => Float
+   dot = a, b => Float(a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w)
+
+   len_sq: Vec4 => Float
+   len_sq = v => Float(v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w)
+
+   len: Vec4 => Float
+   len = v => %sqrt(Float(v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w))
+
+   normalize: Vec4 => Vec4
+   normalize = v =>
+      l = len(v)
+      l == 0.0 | zero! | scale(v, 1.0 / l)
+
+   negate: Vec4 => Vec4
+   negate = v => Vec4((0.0f32 - v.x, 0.0f32 - v.y, 0.0f32 - v.z, 0.0f32 - v.w))
+
+   // --- In-Place Buffer Procedures ---
+
+   set_to: Addr, Float, Float, Float, Float => ()
+   set_to = ptr, x, y, z, w =>
+      v = @[ptr Vec4]
+      v.x = f32(x)
+      v.y = f32(y)
+      v.z = f32(z)
+      v.w = f32(w)
+      0
+
+   copy_to: Addr, Addr => ()
+   copy_to = dst_ptr, src_ptr =>
+      src = @[src_ptr Vec4]
+      dst = @[dst_ptr Vec4]
+      dst.x = src.x
+      dst.y = src.y
+      dst.z = src.z
+      dst.w = src.w
+      0
+
+   add_to: Addr, Addr, Addr => ()
+   add_to = out_ptr, a_ptr, b_ptr =>
+      a = @[a_ptr Vec4]
+      b = @[b_ptr Vec4]
+      out = @[out_ptr Vec4]
+      out.x = a.x + b.x
+      out.y = a.y + b.y
+      out.z = a.z + b.z
+      out.w = a.w + b.w
+      0
+
+   sub_to: Addr, Addr, Addr => ()
+   sub_to = out_ptr, a_ptr, b_ptr =>
+      a = @[a_ptr Vec4]
+      b = @[b_ptr Vec4]
+      out = @[out_ptr Vec4]
+      out.x = a.x - b.x
+      out.y = a.y - b.y
+      out.z = a.z - b.z
+      out.w = a.w - b.w
+      0
+
+   scale_to: Addr, Addr, Float => ()
+   scale_to = out_ptr, src_ptr, s =>
+      src = @[src_ptr Vec4]
+      out = @[out_ptr Vec4]
+      sf = f32(s)
+      out.x = src.x * sf
+      out.y = src.y * sf
+      out.z = src.z * sf
+      out.w = src.w * sf
+      0

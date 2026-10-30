@@ -1,0 +1,147 @@
+// mat/src/mat3.dva — 3x3 column-major matrix primitives and operations
+// Used for 2D transforms and 3D normal matrices.
+
+#public
+   #type Mat3 #packed (
+      m: (f32 * 9)
+   )
+
+   // --- Pure Value Operations ---
+
+   mat3: f32, f32, f32, f32, f32, f32, f32, f32, f32 => Mat3
+   mat3 = m0, m1, m2, m3, m4, m5, m6, m7, m8 =>
+      arr: (f32 * 9)
+      arr = (m0, m1, m2, m3, m4, m5, m6, m7, m8)
+      Mat3((arr))
+
+   identity: () => Mat3
+   identity = !=>
+      mat3(1.0f32, 0.0f32, 0.0f32,
+         0.0f32, 1.0f32, 0.0f32,
+         0.0f32, 0.0f32, 1.0f32)
+
+   mul: Mat3, Mat3 => Mat3
+   mul = a, b =>
+      a0 = a.m(0)
+      a1 = a.m(1)
+      a2 = a.m(2)
+      a3 = a.m(3)
+      a4 = a.m(4)
+      a5 = a.m(5)
+      a6 = a.m(6)
+      a7 = a.m(7)
+      a8 = a.m(8)
+
+      b0 = b.m(0)
+      b1 = b.m(1)
+      b2 = b.m(2)
+      b3 = b.m(3)
+      b4 = b.m(4)
+      b5 = b.m(5)
+      b6 = b.m(6)
+      b7 = b.m(7)
+      b8 = b.m(8)
+
+      mat3(a0 * b0 + a3 * b1 + a6 * b2,
+         a1 * b0 + a4 * b1 + a7 * b2,
+         a2 * b0 + a5 * b1 + a8 * b2,
+         a0 * b3 + a3 * b4 + a6 * b5,
+         a1 * b3 + a4 * b4 + a7 * b5,
+         a2 * b3 + a5 * b4 + a8 * b5,
+         a0 * b6 + a3 * b7 + a6 * b8,
+         a1 * b6 + a4 * b7 + a7 * b8,
+         a2 * b6 + a5 * b7 + a8 * b8)
+
+   transpose: Mat3 => Mat3
+   transpose = m =>
+      mat3(m.m(0), m.m(3), m.m(6),
+         m.m(1), m.m(4), m.m(7),
+         m.m(2), m.m(5), m.m(8))
+
+   // --- In-Place Buffer Procedures ---
+
+   identity_to: Addr => ()
+   identity_to = ptr =>
+      9 @ i =>
+         mat = @[ptr Mat3]
+         row = i % 3
+         col = i / 3
+         mat.m(i) = (row == col | 1.0f32 | 0.0f32)
+
+   copy_to: Addr, Addr => ()
+   copy_to = dst_ptr, src_ptr =>
+      9 @ i =>
+         src = @[src_ptr Mat3]
+         dst = @[dst_ptr Mat3]
+         dst.m(i) = src.m(i)
+
+   // Multiply two 3x3 column-major matrices: out = a * b
+   mul_to: Addr, Addr, Addr => ()
+   mul_to = out_ptr, a_ptr, b_ptr =>
+      3 @ c =>
+         3 @ r =>
+            a = @[a_ptr Mat3]
+            b = @[b_ptr Mat3]
+            out = @[out_ptr Mat3]
+            s0 = a.m(0 * 3 + r) * b.m(c * 3 + 0)
+            s1 = a.m(1 * 3 + r) * b.m(c * 3 + 1)
+            s2 = a.m(2 * 3 + r) * b.m(c * 3 + 2)
+            out.m(c * 3 + r) = s0 + s1 + s2
+
+   transpose_to: Addr, Addr => ()
+   transpose_to = out_ptr, src_ptr =>
+      3 @ c =>
+         3 @ r =>
+            src = @[src_ptr Mat3]
+            out = @[out_ptr Mat3]
+            out.m(r * 3 + c) = src.m(c * 3 + r)
+
+   determinant: Addr => Float
+   determinant = ptr =>
+      m = @[ptr Mat3]
+      m00 = Float(m.m(0))
+      m10 = Float(m.m(1))
+      m20 = Float(m.m(2))
+      m01 = Float(m.m(3))
+      m11 = Float(m.m(4))
+      m21 = Float(m.m(5))
+      m02 = Float(m.m(6))
+      m12 = Float(m.m(7))
+      m22 = Float(m.m(8))
+      m00 * (m11 * m22 - m12 * m21) -
+      m01 * (m10 * m22 - m12 * m20) +
+      m02 * (m10 * m21 - m11 * m20)
+
+   // Invert 3x3 matrix: out = inv(src). Returns <+> on success, <-> if determinant is 0.
+   invert_to: Addr, Addr => <>
+   invert_to = out_ptr, src_ptr =>
+      det = determinant(src_ptr)
+      det == 0.0
+         | <->
+         |
+            src = @[src_ptr Mat3]
+            out = @[out_ptr Mat3]
+            a00 = src.m(0)
+            a10 = src.m(1)
+            a20 = src.m(2)
+            a01 = src.m(3)
+            a11 = src.m(4)
+            a21 = src.m(5)
+            a02 = src.m(6)
+            a12 = src.m(7)
+            a22 = src.m(8)
+
+            inv_det = f32(1.0 / det)
+
+            out.m(0) = (a11 * a22 - a12 * a21) * inv_det
+            out.m(1) = (a12 * a20 - a10 * a22) * inv_det
+            out.m(2) = (a10 * a21 - a11 * a20) * inv_det
+
+            out.m(3) = (a02 * a21 - a01 * a22) * inv_det
+            out.m(4) = (a00 * a22 - a02 * a20) * inv_det
+            out.m(5) = (a01 * a20 - a00 * a21) * inv_det
+
+            out.m(6) = (a01 * a12 - a02 * a11) * inv_det
+            out.m(7) = (a02 * a10 - a00 * a12) * inv_det
+            out.m(8) = (a00 * a11 - a01 * a10) * inv_det
+            <+>

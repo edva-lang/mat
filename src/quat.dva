@@ -1,0 +1,185 @@
+// mat/src/quat.dva — Quaternion rotation primitives and operations
+// Used for gimbal-lock-free 3D rotations, slerp interpolation, and conversion to Mat4.
+
+#use "mat4"
+
+#type Mat4 mat4::Mat4
+
+#public
+   #type Quat #packed (
+      x: f32,
+      y: f32,
+      z: f32,
+      w: f32
+   )
+
+   // --- Constructors & Constants ---
+
+   quat: Float, Float, Float, Float => Quat
+   quat = x, y, z, w => Quat((f32(x), f32(y), f32(z), f32(w)))
+
+   identity: () => Quat
+   identity = !=> Quat((0.0f32, 0.0f32, 0.0f32, 1.0f32))
+
+   from_axis_angle: Float, Float, Float, Float => Quat
+   from_axis_angle = ax, ay, az, angle_rad =>
+      half = angle_rad * 0.5
+      s = %sin(half)
+      c = %cos(half)
+      // Normalize axis
+      l = %sqrt(ax * ax + ay * ay + az * az)
+      inv_l = l == 0.0 | 1.0 | 1.0 / l
+      Quat((
+         f32(ax * inv_l * s),
+         f32(ay * inv_l * s),
+         f32(az * inv_l * s),
+         f32(c)
+      ))
+
+   from_euler: Float, Float, Float => Quat
+   from_euler = pitch, yaw, roll =>
+      // Half angles
+      hp = pitch * 0.5
+      hy = yaw * 0.5
+      hr = roll * 0.5
+      cp = %cos(hp)
+      sp = %sin(hp)
+      cy = %cos(hy)
+      sy = %sin(hy)
+      cr = %cos(hr)
+      sr = %sin(hr)
+
+      Quat((
+         f32(sp * cy * cr - cp * sy * sr),
+         f32(cp * sy * cr + sp * cy * sr),
+         f32(cp * cy * sr - sp * sy * cr),
+         f32(cp * cy * cr + sp * sy * sr)
+      ))
+
+   // --- Pure Value Operations ---
+
+   // Multiply two quaternions: q = a * b
+   mul: Quat, Quat => Quat
+   mul = a, b =>
+      ax = a.x
+      ay = a.y
+      az = a.z
+      aw = a.w
+      bx = b.x
+      by = b.y
+      bz = b.z
+      bw = b.w
+      Quat((
+         aw * bx + ax * bw + ay * bz - az * by,
+         aw * by - ax * bz + ay * bw + az * bx,
+         aw * bz + ax * by - ay * bx + az * bw,
+         aw * bw - ax * bx - ay * by - az * bz
+      ))
+
+   len: Quat => Float
+   len = q => %sqrt(Float(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w))
+
+   normalize: Quat => Quat
+   normalize = q =>
+      l = len(q)
+      l == 0.0
+         | identity!
+         |
+            inv_l = f32(1.0 / l)
+            Quat((q.x * inv_l, q.y * inv_l, q.z * inv_l, q.w * inv_l))
+
+   conjugate: Quat => Quat
+   conjugate = q => Quat((-q.x, -q.y, -q.z, q.w))
+
+   // Spherical linear interpolation between two quaternions
+   slerp: Quat, Quat, Float => Quat
+   slerp = a, b, t =>
+      ax = a.x
+      ay = a.y
+      az = a.z
+      aw = a.w
+      bx = b.x
+      by = b.y
+      bz = b.z
+      bw = b.w
+
+      cos_half_theta = Float(ax * bx + ay * by + az * bz + aw * bw)
+
+      // If negative, negate one quaternion to take shorter path
+      cos_ht = cos_half_theta < 0.0 | -cos_half_theta | cos_half_theta
+      b_sign = cos_half_theta < 0.0 | -1.0f32 | 1.0f32
+      sx = bx * b_sign
+      sy = by * b_sign
+      sz = bz * b_sign
+      sw = bw * b_sign
+
+      // Linear interpolation if very close
+      cos_ht > 0.9995
+         |
+            tf = f32(t)
+            inv_tf = 1.0f32 - tf
+            normalize(Quat((
+               ax * inv_tf + sx * tf,
+               ay * inv_tf + sy * tf,
+               az * inv_tf + sz * tf,
+               aw * inv_tf + sw * tf
+            )))
+         |
+            half_theta = %cos(cos_ht) // approx or angle
+            sin_ht = %sqrt(1.0 - cos_ht * cos_ht)
+            // compute scale factors
+            ratio_a = f32(%sin((1.0 - t) * 1.5707963) / sin_ht)
+            ratio_b = f32(%sin(t * 1.5707963) / sin_ht)
+            Quat((
+               ax * ratio_a + sx * ratio_b,
+               ay * ratio_a + sy * ratio_b,
+               az * ratio_a + sz * ratio_b,
+               aw * ratio_a + sw * ratio_b
+            ))
+
+   // Convert quaternion rotation to a 4x4 matrix
+   to_mat4_to: Addr, Quat => ()
+   to_mat4_to = mat_ptr, q =>
+      mat4::identity_to(mat_ptr)
+      x = q.x
+      y = q.y
+      z = q.z
+      w = q.w
+      x2 = x + x
+      y2 = y + y
+      z2 = z + z
+      xx = x * x2
+      xy = x * y2
+      xz = x * z2
+      yy = y * y2
+      yz = y * z2
+      zz = z * z2
+      wx = w * x2
+      wy = w * y2
+      wz = w * z2
+
+      m = @[mat_ptr Mat4]
+      // Column 0
+      m.m(0) = 1.0f32 - (yy + zz)
+      m.m(1) = xy + wz
+      m.m(2) = xz - wy
+      m.m(3) = 0.0f32
+
+      // Column 1
+      m.m(4) = xy - wz
+      m.m(5) = 1.0f32 - (xx + zz)
+      m.m(6) = yz + wx
+      m.m(7) = 0.0f32
+
+      // Column 2
+      m.m(8) = xz + wy
+      m.m(9) = yz - wx
+      m.m(10) = 1.0f32 - (xx + yy)
+      m.m(11) = 0.0f32
+
+      // Column 3
+      m.m(12) = 0.0f32
+      m.m(13) = 0.0f32
+      m.m(14) = 0.0f32
+      m.m(15) = 1.0f32
+      0

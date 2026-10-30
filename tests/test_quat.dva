@@ -1,0 +1,30 @@
+// mat/tests/test_quat.dva — Quaternion tests
+#use io
+#use sys
+#use "../src/quat"
+#use "../src/mat4"
+
+assert: <>, String => ()
+assert = ok, msg =>
+   ok | --|
+   io::out("FAIL: " + msg)
+   sys::exit(1)
+
+test_quat: () => ()
+test_quat = !=>
+   q = quat::identity!
+   assert(Float(q.w) == 1.0 && Float(q.x) == 0.0, "quat identity")
+
+   // 90 deg rotation around Y
+   qy = quat::from_axis_angle(0.0, 1.0, 0.0, 1.5707963)
+   l = quat::len(qy)
+   assert(l > 0.999 && l < 1.001, "quat len")
+
+   // Convert to Mat4
+   buf_m = {64}
+   quat::to_mat4_to(&buf_m, qy)
+   m = @[&buf_m mat4::Mat4]
+   assert(Float(m.m(15)) == 1.0, "quat to mat4")
+
+test_quat!
+io::out("PASS: Quaternion tests")

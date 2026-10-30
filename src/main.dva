@@ -1,0 +1,27 @@
+// mat/src/main.dva — Demonstrates mat library features
+#use io
+#use "mat"
+#use "vec3"
+#use "mat4"
+
+main: () => ()
+main = !=>
+   io::out("=== Edva 3D Math Library (mat) ===")
+   v1 = mat::vec3(1.0, 2.0, 3.0)
+   v2 = mat::vec3(4.0, 5.0, 6.0)
+   v3 = vec3::add(v1, v2)
+   io::out("Vec3 Add: (" + str::from_float(Float(v3.x)) + ", " + str::from_float(Float(v3.y)) + ", " + str::from_float(Float(v3.z)) + ")")
+
+   dot = vec3::dot(v1, v2)
+   io::out("Vec3 Dot: " + str::from_float(dot))
+
+   cross = vec3::cross(mat::vec3(1.0, 0.0, 0.0), mat::vec3(0.0, 1.0, 0.0))
+   io::out("Vec3 Cross (X x Y): (" + str::from_float(Float(cross.x)) + ", " + str::from_float(Float(cross.y)) + ", " + str::from_float(Float(cross.z)) + ")")
+
+   buf_m = {64}
+   mat4::identity_to(&buf_m)
+   m = @[&buf_m mat::Mat4]
+   io::out("Mat4 Identity diagonal: " + str::from_float(Float(m.m(0))) + ", " + str::from_float(Float(m.m(5))) + ", " + str::from_float(Float(m.m(10))) + ", " + str::from_float(Float(m.m(15))))
+   io::out("mat library initialized successfully.")
+
+main!

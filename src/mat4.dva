@@ -1,0 +1,418 @@
+// mat/src/mat4.dva — 4x4 column-major matrix primitives and transformations
+// Supports both pure value records and in-place memory buffer procedures.
+
+#use "math/geom"
+#use "mat3"
+
+#type Mat3 mat3::Mat3
+
+#public
+   #type Mat4 #packed (
+      m: (f32 * 16)
+   )
+
+   // --- Pure Value Operations ---
+
+   mat4: f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32 => Mat4
+   mat4 = m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15 =>
+      arr: (f32 * 16)
+      arr = (m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15)
+      Mat4((arr))
+
+   identity: () => Mat4
+   identity = !=>
+      mat4(1.0f32, 0.0f32, 0.0f32, 0.0f32,
+         0.0f32, 1.0f32, 0.0f32, 0.0f32,
+         0.0f32, 0.0f32, 1.0f32, 0.0f32,
+         0.0f32, 0.0f32, 0.0f32, 1.0f32)
+
+   translate: Float, Float, Float => Mat4
+   translate = tx, ty, tz =>
+      mat4(1.0f32, 0.0f32, 0.0f32, 0.0f32,
+         0.0f32, 1.0f32, 0.0f32, 0.0f32,
+         0.0f32, 0.0f32, 1.0f32, 0.0f32,
+         f32(tx), f32(ty), f32(tz), 1.0f32)
+
+   translate_vec: geom::Vec3 => Mat4
+   translate_vec = v => translate(v.x, v.y, v.z)
+
+   scale: Float, Float, Float => Mat4
+   scale = sx, sy, sz =>
+      mat4(f32(sx), 0.0f32, 0.0f32, 0.0f32,
+         0.0f32, f32(sy), 0.0f32, 0.0f32,
+         0.0f32, 0.0f32, f32(sz), 0.0f32,
+         0.0f32, 0.0f32, 0.0f32, 1.0f32)
+
+   scale_vec: geom::Vec3 => Mat4
+   scale_vec = v => scale(v.x, v.y, v.z)
+
+   rotate_x: Float => Mat4
+   rotate_x = angle =>
+      c = f32(%cos(angle))
+      s = f32(%sin(angle))
+      mat4(1.0f32, 0.0f32, 0.0f32, 0.0f32,
+         0.0f32, c, s, 0.0f32,
+         0.0f32, -s, c, 0.0f32,
+         0.0f32, 0.0f32, 0.0f32, 1.0f32)
+
+   rotate_y: Float => Mat4
+   rotate_y = angle =>
+      c = f32(%cos(angle))
+      s = f32(%sin(angle))
+      mat4(c, 0.0f32, -s, 0.0f32,
+         0.0f32, 1.0f32, 0.0f32, 0.0f32,
+         s, 0.0f32, c, 0.0f32,
+         0.0f32, 0.0f32, 0.0f32, 1.0f32)
+
+   rotate_z: Float => Mat4
+   rotate_z = angle =>
+      c = f32(%cos(angle))
+      s = f32(%sin(angle))
+      mat4(c, s, 0.0f32, 0.0f32,
+         -s, c, 0.0f32, 0.0f32,
+         0.0f32, 0.0f32, 1.0f32, 0.0f32,
+         0.0f32, 0.0f32, 0.0f32, 1.0f32)
+
+   // Multiply two 4x4 column-major matrices: a * b
+   mul: Mat4, Mat4 => Mat4
+   mul = a, b =>
+      a00 = a.m(0)
+      a10 = a.m(1)
+      a20 = a.m(2)
+      a30 = a.m(3)
+      a01 = a.m(4)
+      a11 = a.m(5)
+      a21 = a.m(6)
+      a31 = a.m(7)
+      a02 = a.m(8)
+      a12 = a.m(9)
+      a22 = a.m(10)
+      a32 = a.m(11)
+      a03 = a.m(12)
+      a13 = a.m(13)
+      a23 = a.m(14)
+      a33 = a.m(15)
+
+      b00 = b.m(0)
+      b10 = b.m(1)
+      b20 = b.m(2)
+      b30 = b.m(3)
+      b01 = b.m(4)
+      b11 = b.m(5)
+      b21 = b.m(6)
+      b31 = b.m(7)
+      b02 = b.m(8)
+      b12 = b.m(9)
+      b22 = b.m(10)
+      b32 = b.m(11)
+      b03 = b.m(12)
+      b13 = b.m(13)
+      b23 = b.m(14)
+      b33 = b.m(15)
+
+      mat4(a00 * b00 + a01 * b10 + a02 * b20 + a03 * b30,
+         a10 * b00 + a11 * b10 + a12 * b20 + a13 * b30,
+         a20 * b00 + a21 * b10 + a22 * b20 + a23 * b30,
+         a30 * b00 + a31 * b10 + a32 * b20 + a33 * b30,
+         a00 * b01 + a01 * b11 + a02 * b21 + a03 * b31,
+         a10 * b01 + a11 * b11 + a12 * b21 + a13 * b31,
+         a20 * b01 + a21 * b11 + a22 * b21 + a23 * b31,
+         a30 * b01 + a31 * b11 + a32 * b21 + a33 * b31,
+         a00 * b02 + a01 * b12 + a02 * b22 + a03 * b32,
+         a10 * b02 + a11 * b12 + a12 * b22 + a13 * b32,
+         a20 * b02 + a21 * b12 + a22 * b22 + a23 * b32,
+         a30 * b02 + a31 * b12 + a32 * b22 + a33 * b32,
+         a00 * b03 + a01 * b13 + a02 * b23 + a03 * b33,
+         a10 * b03 + a11 * b13 + a12 * b23 + a13 * b33,
+         a20 * b03 + a21 * b13 + a22 * b23 + a23 * b33,
+         a30 * b03 + a31 * b13 + a32 * b23 + a33 * b33)
+
+   perspective: Float, Float, Float, Float => Mat4
+   perspective = fov_rad, aspect, near, far =>
+      half_fov = fov_rad * 0.5
+      f = f32(%cos(half_fov) / %sin(half_fov))
+      asp = f32(aspect)
+      n = f32(near)
+      fr = f32(far)
+      nf = 1.0f32 / (n - fr)
+      mat4(f / asp, 0.0f32, 0.0f32, 0.0f32,
+         0.0f32, f, 0.0f32, 0.0f32,
+         0.0f32, 0.0f32, fr * nf, -1.0f32,
+         0.0f32, 0.0f32, (n * fr) * nf, 0.0f32)
+
+   perspective_gl: Float, Float, Float, Float => Mat4
+   perspective_gl = fov_rad, aspect, near, far =>
+      half_fov = fov_rad * 0.5
+      f = f32(%cos(half_fov) / %sin(half_fov))
+      asp = f32(aspect)
+      n = f32(near)
+      fr = f32(far)
+      nf = 1.0f32 / (n - fr)
+      mat4(f / asp, 0.0f32, 0.0f32, 0.0f32,
+         0.0f32, f, 0.0f32, 0.0f32,
+         0.0f32, 0.0f32, (fr + n) * nf, -1.0f32,
+         0.0f32, 0.0f32, 2.0f32 * fr * n * nf, 0.0f32)
+
+   look_at: geom::Vec3, geom::Vec3, geom::Vec3 => Mat4
+   look_at = eye, target, up =>
+      z = geom::norm3(eye - target)
+      x = geom::norm3(geom::cross3(up, z))
+      y = geom::cross3(z, x)
+      tx = -geom::dot3(x, eye)
+      ty = -geom::dot3(y, eye)
+      tz = -geom::dot3(z, eye)
+      mat4(f32(x.x), f32(y.x), f32(z.x), 0.0f32,
+         f32(x.y), f32(y.y), f32(z.y), 0.0f32,
+         f32(x.z), f32(y.z), f32(z.z), 0.0f32,
+         f32(tx), f32(ty), f32(tz), 1.0f32)
+
+   // --- In-Place Buffer Procedures ---
+
+   // Set 4x4 matrix to identity
+   identity_to: Addr => ()
+   identity_to = ptr =>
+      16 @ i =>
+         mat = @[ptr Mat4]
+         row = i % 4
+         col = i / 4
+         mat.m(i) = (row == col | 1.0f32 | 0.0f32)
+         0
+      0
+
+   // Copy 16 floats from src to dst
+   copy_to: Addr, Addr => ()
+   copy_to = dst_ptr, src_ptr =>
+      16 @ i =>
+         src = @[src_ptr Mat4]
+         dst = @[dst_ptr Mat4]
+         dst.m(i) = src.m(i)
+         0
+      0
+
+   // Multiply two 4x4 column-major matrices: out = a * b
+   mul_to: Addr, Addr, Addr => ()
+   mul_to = out_ptr, a_ptr, b_ptr =>
+      4 @ c =>
+         4 @ r =>
+            a = @[a_ptr Mat4]
+            b = @[b_ptr Mat4]
+            out = @[out_ptr Mat4]
+            s0 = a.m(0 * 4 + r) * b.m(c * 4 + 0)
+            s1 = a.m(1 * 4 + r) * b.m(c * 4 + 1)
+            s2 = a.m(2 * 4 + r) * b.m(c * 4 + 2)
+            s3 = a.m(3 * 4 + r) * b.m(c * 4 + 3)
+            out.m(c * 4 + r) = s0 + s1 + s2 + s3
+            0
+         0
+      0
+
+   // Perspective projection matrix for WebGPU / Vulkan depth range [0, 1]
+   perspective_to: Addr, Float, Float, Float, Float => ()
+   perspective_to = ptr, fov_rad, aspect, near, far =>
+      identity_to(ptr)
+      half_fov = fov_rad * 0.5
+      sin_h = %sin(half_fov)
+      cos_h = %cos(half_fov)
+      f = f32(cos_h / sin_h)
+      asp = f32(aspect)
+      n = f32(near)
+      fr = f32(far)
+
+      mat = @[ptr Mat4]
+      // Column 0
+      mat.m(0) = f / asp
+      mat.m(1) = 0.0f32
+      mat.m(2) = 0.0f32
+      mat.m(3) = 0.0f32
+
+      // Column 1
+      mat.m(4) = 0.0f32
+      mat.m(5) = f
+      mat.m(6) = 0.0f32
+      mat.m(7) = 0.0f32
+
+      // Column 2
+      mat.m(8) = 0.0f32
+      mat.m(9) = 0.0f32
+      mat.m(10) = fr / (n - fr)
+      mat.m(11) = -1.0f32
+
+      // Column 3
+      mat.m(12) = 0.0f32
+      mat.m(13) = 0.0f32
+      mat.m(14) = (n * fr) / (n - fr)
+      mat.m(15) = 0.0f32
+      0
+
+   // Perspective projection matrix for OpenGL depth range [-1, 1]
+   perspective_gl_to: Addr, Float, Float, Float, Float => ()
+   perspective_gl_to = ptr, fov_rad, aspect, near, far =>
+      identity_to(ptr)
+      half_fov = fov_rad * 0.5
+      f = f32(%cos(half_fov) / %sin(half_fov))
+      asp = f32(aspect)
+      n = f32(near)
+      fr = f32(far)
+      nf = 1.0f32 / (n - fr)
+
+      mat = @[ptr Mat4]
+      mat.m(0) = f / asp
+      mat.m(5) = f
+      mat.m(10) = (fr + n) * nf
+      mat.m(11) = -1.0f32
+      mat.m(14) = 2.0f32 * fr * n * nf
+      mat.m(15) = 0.0f32
+      0
+
+   // Orthographic projection matrix for WebGPU depth range [0, 1]
+   ortho_to: Addr, Float, Float, Float, Float, Float, Float => ()
+   ortho_to = ptr, left, right, bottom, top, near, far =>
+      identity_to(ptr)
+      l = f32(left)
+      r = f32(right)
+      b = f32(bottom)
+      t = f32(top)
+      n = f32(near)
+      f = f32(far)
+
+      lr = 1.0f32 / (r - l)
+      bt = 1.0f32 / (t - b)
+      nf = 1.0f32 / (n - f)
+
+      mat = @[ptr Mat4]
+      mat.m(0) = 2.0f32 * lr
+      mat.m(5) = 2.0f32 * bt
+      mat.m(10) = nf
+      mat.m(12) = -(r + l) * lr
+      mat.m(13) = -(t + b) * bt
+      mat.m(14) = n * nf
+      mat.m(15) = 1.0f32
+      0
+
+   // Look-At view matrix (using std/math/geom Vec3 primitives)
+   look_at_to: Addr, Float, Float, Float, Float, Float, Float, Float, Float, Float => ()
+   look_at_to = ptr, eye_x, eye_y, eye_z, target_x, target_y, target_z, up_x, up_y, up_z =>
+      eye    = geom::vec3(eye_x, eye_y, eye_z)
+      target = geom::vec3(target_x, target_y, target_z)
+      up     = geom::vec3(up_x, up_y, up_z)
+      z = geom::norm3(eye - target)
+      x = geom::norm3(geom::cross3(up, z))
+      y = geom::cross3(z, x)
+
+      mat = @[ptr Mat4]
+      mat.m(0) = f32(x.x)
+      mat.m(1) = f32(y.x)
+      mat.m(2) = f32(z.x)
+      mat.m(3) = 0.0f32
+
+      mat.m(4) = f32(x.y)
+      mat.m(5) = f32(y.y)
+      mat.m(6) = f32(z.y)
+      mat.m(7) = 0.0f32
+
+      mat.m(8) = f32(x.z)
+      mat.m(9) = f32(y.z)
+      mat.m(10) = f32(z.z)
+      mat.m(11) = 0.0f32
+
+      mat.m(12) = f32(-geom::dot3(x, eye))
+      mat.m(13) = f32(-geom::dot3(y, eye))
+      mat.m(14) = f32(-geom::dot3(z, eye))
+      mat.m(15) = 1.0f32
+      0
+
+   // Translation matrix
+   translate_to: Addr, Float, Float, Float => ()
+   translate_to = ptr, tx, ty, tz =>
+      identity_to(ptr)
+      mat = @[ptr Mat4]
+      mat.m(12) = f32(tx)
+      mat.m(13) = f32(ty)
+      mat.m(14) = f32(tz)
+      0
+
+   // Rotation around X axis
+   rotate_x_to: Addr, Float => ()
+   rotate_x_to = ptr, angle =>
+      identity_to(ptr)
+      c = f32(%cos(angle))
+      s = f32(%sin(angle))
+      mat = @[ptr Mat4]
+      mat.m(5) = c
+      mat.m(6) = s
+      mat.m(9) = -s
+      mat.m(10) = c
+      0
+
+   // Rotation around Y axis
+   rotate_y_to: Addr, Float => ()
+   rotate_y_to = ptr, angle =>
+      identity_to(ptr)
+      c = f32(%cos(angle))
+      s = f32(%sin(angle))
+      mat = @[ptr Mat4]
+      mat.m(0) = c
+      mat.m(2) = -s
+      mat.m(8) = s
+      mat.m(10) = c
+      0
+
+   // Rotation around Z axis
+   rotate_z_to: Addr, Float => ()
+   rotate_z_to = ptr, angle =>
+      identity_to(ptr)
+      c = f32(%cos(angle))
+      s = f32(%sin(angle))
+      mat = @[ptr Mat4]
+      mat.m(0) = c
+      mat.m(1) = s
+      mat.m(4) = -s
+      mat.m(5) = c
+      0
+
+   // Scale matrix
+   scale_to: Addr, Float, Float, Float => ()
+   scale_to = ptr, sx, sy, sz =>
+      identity_to(ptr)
+      mat = @[ptr Mat4]
+      mat.m(0) = f32(sx)
+      mat.m(5) = f32(sy)
+      mat.m(10) = f32(sz)
+      0
+
+   // Transpose 4x4 matrix
+   transpose_to: Addr, Addr => ()
+   transpose_to = out_ptr, src_ptr =>
+      4 @ c =>
+         4 @ r =>
+            src = @[src_ptr Mat4]
+            out = @[out_ptr Mat4]
+            out.m(r * 4 + c) = src.m(c * 4 + r)
+            0
+         0
+      0
+
+   // Extract upper-left 3x3 and compute normal matrix (inverse transpose)
+   extract_normal_matrix_to: Addr, Addr => <>
+   extract_normal_matrix_to = normal_ptr, model_view_ptr =>
+      m = @[model_view_ptr Mat4]
+      buf = {36}
+      sub3 = @[&buf Mat3]
+      // Copy upper-left 3x3
+      sub3.m(0) = m.m(0)
+      sub3.m(1) = m.m(1)
+      sub3.m(2) = m.m(2)
+      sub3.m(3) = m.m(4)
+      sub3.m(4) = m.m(5)
+      sub3.m(5) = m.m(6)
+      sub3.m(6) = m.m(8)
+      sub3.m(7) = m.m(9)
+      sub3.m(8) = m.m(10)
+
+      inv_buf = {36}
+      ok = mat3::invert_to(&inv_buf, &buf)
+      ok
+         |
+            mat3::transpose_to(normal_ptr, &inv_buf)
+            <+>
+         | <->
