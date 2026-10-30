@@ -396,23 +396,13 @@
    extract_normal_matrix_to: Addr, Addr => <>
    extract_normal_matrix_to = normal_ptr, model_view_ptr =>
       m = @[model_view_ptr Mat4]
-      buf = {36}
-      sub3 = @[&buf Mat3]
-      // Copy upper-left 3x3
-      sub3.m(0) = m.m(0)
-      sub3.m(1) = m.m(1)
-      sub3.m(2) = m.m(2)
-      sub3.m(3) = m.m(4)
-      sub3.m(4) = m.m(5)
-      sub3.m(5) = m.m(6)
-      sub3.m(6) = m.m(8)
-      sub3.m(7) = m.m(9)
-      sub3.m(8) = m.m(10)
-
-      inv_buf = {36}
-      ok = mat3::invert_to(&inv_buf, &buf)
-      ok
+      sub3 = mat3::mat3(
+         m.m(0), m.m(1), m.m(2),
+         m.m(4), m.m(5), m.m(6),
+         m.m(8), m.m(9), m.m(10))
+      inv3 = mat3::identity()
+      mat3::invert_to(&inv3, &sub3)
          |
-            mat3::transpose_to(normal_ptr, &inv_buf)
+            mat3::transpose_to(normal_ptr, &inv3)
             <+>
          | <->
