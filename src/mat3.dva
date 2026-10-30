@@ -1,6 +1,8 @@
 // mat/src/mat3.dva — 3x3 column-major matrix primitives and operations
 // Used for 2D transforms and 3D normal matrices.
 
+#pragma float f32
+
 #public
    #type Mat3 #packed (
       m: (f32 * 9)
@@ -16,9 +18,9 @@
 
    identity: () => Mat3
    identity = !=>
-      mat3(1.0f32, 0.0f32, 0.0f32,
-         0.0f32, 1.0f32, 0.0f32,
-         0.0f32, 0.0f32, 1.0f32)
+      mat3(1.0, 0.0, 0.0,
+         0.0, 1.0, 0.0,
+         0.0, 0.0, 1.0)
 
    mul: Mat3, Mat3 => Mat3
    mul = a, b =>
@@ -66,7 +68,7 @@
          mat = @[ptr Mat3]
          row = i % 3
          col = i / 3
-         mat.m(i) = (row == col | 1.0f32 | 0.0f32)
+         mat.m(i) = (row == col | 1.0 | 0.0)
 
    copy_to: Addr, Addr => ()
    copy_to = dst_ptr, src_ptr =>
@@ -95,6 +97,8 @@
             src = @[src_ptr Mat3]
             out = @[out_ptr Mat3]
             out.m(r * 3 + c) = src.m(c * 3 + r)
+
+   #pragma float default
 
    determinant: Addr => Float
    determinant = ptr =>
