@@ -24,12 +24,6 @@ test_vec2 = !=>
    l = vec2::len(vec2::vec2(3.0, 4.0))
    assert(l == 5.0, "vec2 len")
 
-   // In-place
-   buf = {8}
-   vec2::set_to(&buf, 10.0, 20.0)
-   v = @[&buf vec2::Vec2]
-   assert(Float(v.x) == 10.0 && Float(v.y) == 20.0, "vec2 set_to")
-
 test_vec3: () => ()
 test_vec3 = !=>
    a = vec3::vec3(1.0, 0.0, 0.0)

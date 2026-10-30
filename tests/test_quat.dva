@@ -2,7 +2,6 @@
 #use io
 #use sys
 #use "../src/quat"
-#use "../src/mat4"
 
 assert: <>, String => ()
 assert = ok, msg =>
@@ -21,10 +20,8 @@ test_quat = !=>
    assert(l > 0.999 && l < 1.001, "quat len")
 
    // Convert to Mat4
-   buf_m = {64}
-   quat::to_mat4_to(&buf_m, qy)
-   m = @[&buf_m mat4::Mat4]
-   assert(Float(m.m(15)) == 1.0, "quat to mat4")
+   m = quat::to_mat4(qy)
+   assert(Float(m(15)) == 1.0, "quat to mat4")
 
 test_quat!
 io::out("PASS: Quaternion tests")

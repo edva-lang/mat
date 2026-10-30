@@ -18,10 +18,8 @@ main = !=>
    cross = vec3::cross(mat::vec3(1.0, 0.0, 0.0), mat::vec3(0.0, 1.0, 0.0))
    io::out("Vec3 Cross (X x Y): (" + str::from_float(Float(cross.x)) + ", " + str::from_float(Float(cross.y)) + ", " + str::from_float(Float(cross.z)) + ")")
 
-   buf_m = {64}
-   mat4::identity_to(&buf_m)
-   m = @[&buf_m mat::Mat4]
-   io::out("Mat4 Identity diagonal: " + str::from_float(Float(m.m(0))) + ", " + str::from_float(Float(m.m(5))) + ", " + str::from_float(Float(m.m(10))) + ", " + str::from_float(Float(m.m(15))))
+   m = mat4::identity!
+   io::out("Mat4 Identity diagonal: " + str::from_float(Float(m(0))) + ", " + str::from_float(Float(m(5))) + ", " + str::from_float(Float(m(10))) + ", " + str::from_float(Float(m(15))))
    io::out("mat library initialized successfully.")
 
 main!

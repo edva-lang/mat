@@ -1,5 +1,5 @@
 // mat/src/mat.dva — Public library API for 2D/3D graphics mathematics
-// Provides packed records and hybrid (pure value + zero-copy buffer) linear algebra.
+// Provides packed C-ABI records and pure value linear algebra.
 
 #use "vec2"
 #use "vec3"
@@ -9,7 +9,7 @@
 #use "quat"
 
 #public
-   // --- Core Record Types ---
+   // --- Core Types ---
    #type Vec2 vec2::Vec2
    #type Vec3 vec3::Vec3
    #type Vec4 vec4::Vec4
@@ -17,7 +17,7 @@
    #type Mat4 mat4::Mat4
    #type Quat quat::Quat
 
-   // --- Vector Constructors ---
+   // --- Vector & Quaternion Constructors ---
    vec2: Float, Float => vec2::Vec2
    vec2 = x, y => vec2::vec2(x, y)
 
@@ -60,11 +60,3 @@
 
    quat_identity: () => quat::Quat
    quat_identity = !=> quat::identity!
-
-   // --- Sizes for Buffer Allocation ---
-   VEC2_SIZE = 8
-   VEC3_SIZE = 12
-   VEC4_SIZE = 16
-   MAT3_SIZE = 36
-   MAT4_SIZE = 64
-   QUAT_SIZE = 16
