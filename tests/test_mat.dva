@@ -1,43 +1,38 @@
 // mat/tests/test_mat.dva — Matrix tests
-#use io
-#use sys
+#use test
 #use "math/geom"
 #use "../src/mat3"
 #use "../src/mat4"
 
-assert: <>, String => ()
-assert = ok, msg =>
-   ok | --|
-   io::out("FAIL: " + msg)
-   sys::exit(1)
-
 test_mat3: () => ()
 test_mat3 = !=>
+   test::suite("mat::mat3")
    m = mat3::identity!
-   assert(Float(m(0)) == 1.0 && Float(m(4)) == 1.0 && Float(m(8)) == 1.0, "mat3 identity")
+   test::check(Float(m(0)) == 1.0 && Float(m(4)) == 1.0 && Float(m(8)) == 1.0, "mat3 identity")
 
    det = mat3::determinant(m)
-   assert(det == 1.0, "mat3 determinant")
+   test::eq(det, 1.0, "mat3 determinant")
 
    inv = mat3::invert(m)!!
-   assert(Float(inv(0)) == 1.0 && Float(inv(4)) == 1.0, "mat3 inv identity")
+   test::check(Float(inv(0)) == 1.0 && Float(inv(4)) == 1.0, "mat3 inv identity")
 
 test_mat4: () => ()
 test_mat4 = !=>
+   test::suite("mat::mat4")
    v_id  = mat4::identity!
    v_tr  = mat4::translate(10.0, 20.0, 30.0)
    v_res = mat4::mul(v_id, v_tr)
-   assert(Float(v_res(12)) == 10.0 && Float(v_res(13)) == 20.0 && Float(v_res(14)) == 30.0, "mat4 mul translation")
+   test::check(Float(v_res(12)) == 10.0 && Float(v_res(13)) == 20.0 && Float(v_res(14)) == 30.0, "mat4 mul translation")
 
    p = mat4::perspective(1.047197, 1.6, 0.1, 100.0)
-   assert(Float(p(11)) == -1.0, "mat4 perspective")
+   test::eq(Float(p(11)), -1.0, "mat4 perspective")
 
    v_look = mat4::look_at(geom::vec3(0.0, 0.0, 5.0), geom::vec3(0.0, 0.0, 0.0), geom::vec3(0.0, 1.0, 0.0))
-   assert(Float(v_look(14)) == -5.0, "mat4 look_at")
+   test::eq(Float(v_look(14)), -5.0, "mat4 look_at")
 
    norm = mat4::extract_normal_matrix(v_id)!!
-   assert(Float(norm(0)) == 1.0 && Float(norm(4)) == 1.0 && Float(norm(8)) == 1.0, "mat4 normal matrix")
+   test::check(Float(norm(0)) == 1.0 && Float(norm(4)) == 1.0 && Float(norm(8)) == 1.0, "mat4 normal matrix")
 
 test_mat3!
 test_mat4!
-io::out("PASS: Matrix tests")
+test::finish!
